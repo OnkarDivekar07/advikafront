@@ -1,24 +1,32 @@
-import logo from './logo.svg';
-import './App.css';
+
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import HomePage from './pages/HomePage/HomePage';
+import CartPage from './pages/Cart/CartPage';
+import ProductDetailPage from './pages/ProductDetailPage/ProductDetailPage';
+import UserProfilePage from './pages/UserProfilePage/UserProfilePage';
+import WishlistPage from './pages/WishlistPage/WishlistPage'
+import CheckoutPage from './pages/CheckoutPage/CheckoutPage';
+import OTPVerificationPage from './pages/OtpVerificationPage/OtpVerificationPage';
+import  AddressSelectionPage from './pages/AddressSelectionPage/AddressSelectionPage'
+import PaymentPage from './pages/PaymentPage/PaymentPage';
+import OrderSuccessPage from './pages/OrderSuccessPage/OrderSuccessPage';
 
 function App() {
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <Router>
+      <Routes>
+        <Route path="/" element={<HomePage />} />
+        <Route path="/cart" element={<CartPage />} />
+        <Route path="/product" element={<ProductDetailPage />} />
+        <Route path="/profile" element={<UserProfilePage />}/>
+        <Route path="/wishlist" element={<WishlistPage />} />
+        <Route path="/checkout" element={<CheckoutPage />} />
+        <Route path="/verify-otp" element={<OTPVerificationPage />} />
+        <Route path="/address-selection" element={<AddressSelectionPage />} />
+        <Route path="/payment" element={<PaymentPage />} /> {/* <-- Add this */}
+        <Route path='/Sucess' element={<OrderSuccessPage/>}/>
+      </Routes>
+    </Router>
   );
 }
 
