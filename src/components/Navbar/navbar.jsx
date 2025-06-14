@@ -20,7 +20,7 @@ export default function Navbar() {
       {/* Container for consistent width */}
       <div className="max-w-screen-xl mx-auto flex items-center justify-between flex-wrap gap-4">
         {/* Logo */}
-        <div className="inline-flex items-center p-2 cursor-pointer select-none space-x-2 flex-shrink-0">
+        <div className="inline-flex items-baseline p-2 cursor-pointer select-none space-x-2 flex-shrink-0 whitespace-nowrap">
           <span
             className="text-white text-[3rem] sm:text-[4rem] leading-none"
             style={{ fontFamily: '"Freestyle Script", cursive' }}
