@@ -2,10 +2,12 @@
 import { useState } from 'react';
 import QuantitySelector from '../QuantitySelector/QuantitySelector';
 import ActionButtons from '../ActionButtons/ActionButtons';
+import { useNavigate } from 'react-router-dom';
 
 export default function ProductDetails({ product }) {
   const [quantity, setQuantity] = useState(1);
   const subtotal = (product.price * quantity).toFixed(2);
+  const navigate = useNavigate();
 
   return (
     <section className="md:w-1/2 flex flex-col justify-between">
@@ -24,7 +26,33 @@ export default function ProductDetails({ product }) {
         <label className="block text-gray-700 mb-2 font-semibold">Quantity</label>
         <QuantitySelector quantity={quantity} setQuantity={setQuantity} />
         <div className="mt-4 text-black font-bold text-xl">Subtotal: ₹ {subtotal}</div>
-        <ActionButtons onBuyNow={() => alert('Proceed to buy')} onAddToCart={() => alert('Added to cart!')} />
+      <ActionButtons 
+  onBuyNow={() => navigate('/checkout')}
+  onAddToCart={() => {
+    const cart = JSON.parse(localStorage.getItem('cart')) || [];
+
+    // Check if product already in cart
+    const existingIndex = cart.findIndex(item => item.id === product.id);
+    
+    if (existingIndex >= 0) {
+      // Update quantity
+      cart[existingIndex].quantity += quantity;
+    } else {
+      // Add new item
+      cart.push({
+        id: product.id,
+        name: product.name,
+        price: product.price,
+        quantity: quantity,
+        image: product.images?.[0] || '', // optional: for preview in cart
+      });
+    }
+
+    localStorage.setItem('cart', JSON.stringify(cart));
+    alert('Added to cart!');
+    navigate('/cart')
+  }}
+/>
       </form>
     </section>
   );

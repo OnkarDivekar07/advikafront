@@ -1,37 +1,31 @@
-
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Navbar from '../../components/Navbar/navbar';
 import CartItem from '../../components/Cart/CartItem';
 import CartSummary from '../../components/Cart/CartSummary';
 
 export default function CartPage() {
-  const [cartItems, setCartItems] = useState([
-    {
-      id: 1,
-      name: "Modern Floor Lamp",
-      image: "https://placehold.co/300x300?text=Modern+Floor+Lamp",
-      alt: "Modern floor lamp with sleek design",
-      price: 120,
-      quantity: 2,
-    },
-    {
-      id: 2,
-      name: "Decorative Vase",
-      image: "https://placehold.co/300x300?text=Decorative+Vase",
-      alt: "Elegant decorative vase in white",
-      price: 80,
-      quantity: 1,
-    },
-  ]);
+  const [cartItems, setCartItems] = useState([]);
 
+  // Load cart from localStorage when component mounts
+  useEffect(() => {
+    const storedCart = JSON.parse(localStorage.getItem('cart')) || [];
+    setCartItems(storedCart);
+  }, []);
+
+  // Update quantity of a specific item
   function handleQuantityChange(id, quantity) {
-    setCartItems((items) =>
-      items.map((item) => (item.id === id ? { ...item, quantity } : item))
+    const updatedCart = cartItems.map((item) =>
+      item.id === id ? { ...item, quantity } : item
     );
+    setCartItems(updatedCart);
+    localStorage.setItem('cart', JSON.stringify(updatedCart));
   }
 
+  // Remove item from cart
   function handleRemove(id) {
-    setCartItems((items) => items.filter((item) => item.id !== id));
+    const updatedCart = cartItems.filter((item) => item.id !== id);
+    setCartItems(updatedCart);
+    localStorage.setItem('cart', JSON.stringify(updatedCart));
   }
 
   return (
@@ -53,6 +47,8 @@ export default function CartPage() {
             ))
           )}
         </section>
+
+        {/* Cart Summary */}
         {cartItems.length > 0 && <CartSummary items={cartItems} />}
       </main>
     </>
