@@ -1,19 +1,18 @@
 // components/OrderSummary.jsx
 import OrderItem from "../OrderItem/OrderItem";
 
-export default function OrderSummary({ cartItems }) {
+export default function OrderSummary({ orderItems }) {
   const formatPrice = (num) => `₹${num.toFixed(2)}`;
 
- const subtotal = cartItems.reduce((acc, item) => acc + item.product.price * item.quantity, 0);
-const total = subtotal
-
+  const subtotal = orderItems.reduce((acc, item) => acc + item.price * item.quantity, 0);
+  const total = subtotal;
 
   return (
     <section className="mb-10">
       <h2 className="text-xl font-semibold mb-4 text-black">Order Summary</h2>
       <div className="bg-gray-100 rounded-lg p-6 shadow-md">
         <ul className="divide-y divide-gray-300 mb-6">
-          {cartItems.map((item) => (
+          {orderItems.map((item) => (
             <OrderItem key={item.id} item={item} />
           ))}
         </ul>

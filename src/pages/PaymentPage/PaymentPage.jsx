@@ -6,46 +6,125 @@ import Navbar from "../../components/Navbar/navbar";
 import { useNavigate } from "react-router-dom";
 
 export default function PaymentPage() {
-  const [cartItems, setCartItems] = useState([]);
+  const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const token = localStorage.getItem("token");
   const navigate = useNavigate();
 
-  useEffect(() => {
-    if (!token) {
-      setError("You need to login first.");
-      setLoading(false);
-      return;
-    }
+ useEffect(() => {
+  if (!token || order) return;
 
-    const fetchCart = async () => {
-      try {
-        const res = await axios.get(`${process.env.REACT_APP_API_URL}/api/cart`, {
+  const fetchOrCreateDraftOrder = async () => {
+    try {
+      // Step 1: Try to GET existing draft
+      const res = await axios.get(
+        `${process.env.REACT_APP_API_URL}/api/order`,
+        {
           headers: { Authorization: `Bearer ${token}` },
-        });
-        console.log("cart fetch response" ,res.data)
-        setCartItems(res.data || []);
-      } catch (err) {
-        console.error("Failed to fetch cart", err);
-        setError("Failed to fetch cart. Please try again.");
-      } finally {
-        setLoading(false);
+        }
+      );
+
+      if (res.data.success) {
+        console.log("Fetched existing draft order:", res.data.order);
+        setOrder(res.data.order);
+      } else {
+        // Step 2: If no draft found, fallback to create one
+        const createRes = await axios.post(
+          `${process.env.REACT_APP_API_URL}/api/order`,
+          {},
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+        console.log("Created new draft order:", createRes.data.order);
+        setOrder(createRes.data.order || null);
       }
-    };
-
-    fetchCart();
-  }, [token]);
-
-  const handlePayment = (method) => {
-    if (method === "cod") {
-      alert("Order placed successfully with Cash on Delivery.");
-      navigate("/order-success"); // if you have a success page
-    } else {
-      alert(`Redirecting to payment gateway for ${method.toUpperCase()} (simulated).`);
-      // redirect to payment gateway logic
+    } catch (err) {
+      console.error("Error fetching/creating draft order", err);
+      setError("Could not retrieve or create a draft order.");
+    } finally {
+      setLoading(false);
     }
   };
+
+  fetchOrCreateDraftOrder();
+}, [token, order]);
+
+  const handlePayment = async (method) => {
+  if (!order) return;
+
+  if (method === "cod") {
+    alert("Order placed successfully with Cash on Delivery.");
+    navigate("/order-success");
+  } else {
+    try {
+      const res = await axios.post(
+        `${process.env.REACT_APP_API_URL}/api/payment/create-orderid`,
+        {
+          orderId: order.id, // Pass your draft order ID if needed in backend
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+     console.log("Razorpay Init Response:", res.data);
+
+      const { key_id, order: razorOrder } = res.data;
+
+      const options = {
+        key: key_id,
+        amount: razorOrder.amount,
+        currency: "INR",
+        name: "Your Company Name",
+        description: "Order Payment",
+        order_id: razorOrder.id,
+        handler: async function (response) {
+          try {
+            // Verify payment on backend
+            await axios.post(
+              `${process.env.REACT_APP_API_URL}/api/payment/verify`,
+              {
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+              },
+              {
+                headers: { Authorization: `Bearer ${token}` },
+              }
+            );
+
+            alert("Payment Successful!");
+            navigate("/Sucess");
+          } catch (err) {
+            console.error("Verification failed:", err);
+            alert("Payment verification failed.");
+          }
+        },
+        prefill: {
+          name: "Customer Name",
+          email: "customer@example.com",
+          contact: "9999999999",
+        },
+        theme: {
+          color: "#3399cc",
+        },
+      };
+
+      const rzp = new window.Razorpay(options);
+      rzp.open();
+
+      rzp.on("payment.failed", function (response) {
+        console.error("Payment failed:", response.error);
+        alert("Payment failed. Please try again.");
+      });
+
+    } catch (error) {
+      console.error("Payment init error:", error);
+      alert("Could not start payment process.");
+    }
+  }
+};
 
   return (
     <>
@@ -54,14 +133,14 @@ export default function PaymentPage() {
         <h1 className="text-3xl font-bold mb-8 text-black">Payment</h1>
 
         {loading ? (
-          <p>Loading your summary...</p>
+          <p>Loading your draft order...</p>
         ) : error ? (
           <p className="text-red-600">{error}</p>
-        ) : cartItems.length === 0 ? (
-          <p className="text-red-500">Your cart is empty.</p>
+        ) : !order || !order.orderItems || order.orderItems.length === 0 ? (
+          <p className="text-red-500">Your order is empty or could not be created.</p>
         ) : (
           <>
-            <OrderSummary cartItems={cartItems} />
+            <OrderSummary orderItems={order.orderItems} />
             <PaymentMethodForm onPayment={handlePayment} />
           </>
         )}
