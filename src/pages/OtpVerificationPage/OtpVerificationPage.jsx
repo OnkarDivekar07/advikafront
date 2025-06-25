@@ -13,7 +13,8 @@ const syncCartToBackend = async (token) => {
       productId: item.id,
       quantity: item.quantity,
     }));
-      
+
+    console.log('formattedCart',formattedCart)
       await axios.post(`${process.env.REACT_APP_API_URL}/api/cart`, {
          cartItems: formattedCart,
       }, {

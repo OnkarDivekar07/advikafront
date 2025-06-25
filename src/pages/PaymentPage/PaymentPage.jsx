@@ -12,24 +12,35 @@ export default function PaymentPage() {
   const token = localStorage.getItem("token");
   const navigate = useNavigate();
 
- useEffect(() => {
-  if (!token || order) return;
+  useEffect(() => {
+    if (!token || order) return;
 
-  const fetchOrCreateDraftOrder = async () => {
-    try {
-      // Step 1: Try to GET existing draft
-      const res = await axios.get(
-        `${process.env.REACT_APP_API_URL}/api/order`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
+    const fetchOrCreateDraftOrder = async () => {
+      const storedOrderId = localStorage.getItem("orderId");
+          console.log(storedOrderId)
+      try {
+        let res;
+
+        if (storedOrderId) {
+          // Try fetching order using orderId
+          res = await axios.get(
+            `${process.env.REACT_APP_API_URL}/api/order/${storedOrderId}`,
+            {
+              headers: { Authorization: `Bearer ${token}` },
+            }
+          );
+
+          if (res.data.success && res.data.order.status === "draft") {
+            console.log("Fetched order from localStorage ID:", res.data.order);
+            setOrder(res.data.order);
+            return;
+          } else {
+            // If order is not a draft, remove it
+            localStorage.removeItem("orderId");
+          }
         }
-      );
 
-      if (res.data.success) {
-        console.log("Fetched existing draft order:", res.data.order);
-        setOrder(res.data.order);
-      } else {
-        // Step 2: If no draft found, fallback to create one
+        // Fallback: No stored ID or invalid draft -> Create new
         const createRes = await axios.post(
           `${process.env.REACT_APP_API_URL}/api/order`,
           {},
@@ -37,94 +48,98 @@ export default function PaymentPage() {
             headers: { Authorization: `Bearer ${token}` },
           }
         );
-        console.log("Created new draft order:", createRes.data.order);
-        setOrder(createRes.data.order || null);
-      }
-    } catch (err) {
-      console.error("Error fetching/creating draft order", err);
-      setError("Could not retrieve or create a draft order.");
-    } finally {
-      setLoading(false);
-    }
-  };
+        if (createRes.data.success) {
+          console.log("Created new draft order:", createRes.data.order);
+          setOrder(createRes.data.order);
+          localStorage.setItem("orderId", createRes.data.order.id);
+        }
 
-  fetchOrCreateDraftOrder();
-}, [token, order]);
+      } catch (err) {
+        console.error("Error in fetching/creating order:", err);
+        localStorage.removeItem("orderId");
+        setError("Could not retrieve or create a draft order.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchOrCreateDraftOrder();
+  }, [token, order]);
 
   const handlePayment = async (method) => {
-  if (!order) return;
+    if (!order) return;
 
-  if (method === "cod") {
-    alert("Order placed successfully with Cash on Delivery.");
-    navigate("/order-success");
-  } else {
-    try {
-      const res = await axios.post(
-        `${process.env.REACT_APP_API_URL}/api/payment/create-orderid`,
-        {
-          orderId: order.id, // Pass your draft order ID if needed in backend
-        },
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-     console.log("Razorpay Init Response:", res.data);
-
-      const { key_id, order: razorOrder } = res.data;
-
-      const options = {
-        key: key_id,
-        amount: razorOrder.amount,
-        currency: "INR",
-        name: "Your Company Name",
-        description: "Order Payment",
-        order_id: razorOrder.id,
-        handler: async function (response) {
-          try {
-            // Verify payment on backend
-            await axios.post(
-              `${process.env.REACT_APP_API_URL}/api/payment/verify`,
-              {
-                razorpay_order_id: response.razorpay_order_id,
-                razorpay_payment_id: response.razorpay_payment_id,
-                razorpay_signature: response.razorpay_signature,
-              },
-              {
-                headers: { Authorization: `Bearer ${token}` },
-              }
-            );
-
-            alert("Payment Successful!");
-            navigate("/Sucess");
-          } catch (err) {
-            console.error("Verification failed:", err);
-            alert("Payment verification failed.");
+    if (method === "cod") {
+      alert("Order placed successfully with Cash on Delivery.");
+      localStorage.removeItem("orderId");
+      navigate("/order-success");
+    } else {
+      try {
+        const res = await axios.post(
+          `${process.env.REACT_APP_API_URL}/api/payment/create-orderid`,
+          {
+            orderId: order.id,
+          },
+          {
+            headers: { Authorization: `Bearer ${token}` },
           }
-        },
-        prefill: {
-          name: "Customer Name",
-          email: "customer@example.com",
-          contact: "9999999999",
-        },
-        theme: {
-          color: "#3399cc",
-        },
-      };
+        );
 
-      const rzp = new window.Razorpay(options);
-      rzp.open();
+        const { key_id, order: razorOrder } = res.data;
 
-      rzp.on("payment.failed", function (response) {
-        console.error("Payment failed:", response.error);
-        alert("Payment failed. Please try again.");
-      });
+        const options = {
+          key: key_id,
+          amount: razorOrder.amount,
+          currency: "INR",
+          name: "Your Company Name",
+          description: "Order Payment",
+          order_id: razorOrder.id,
+          handler: async function (response) {
+            try {
+              await axios.post(
+                `${process.env.REACT_APP_API_URL}/api/payment/verify`,
+                {
+                  razorpay_order_id: response.razorpay_order_id,
+                  razorpay_payment_id: response.razorpay_payment_id,
+                  razorpay_signature: response.razorpay_signature,
+                },
+                {
+                  headers: { Authorization: `Bearer ${token}` },
+                }
+              );
 
-    } catch (error) {
-      console.error("Payment init error:", error);
-      alert("Could not start payment process.");
+              alert("Payment Successful!");
+              localStorage.removeItem("orderId");
+              navigate("/Sucess");
+            } catch (err) {
+              console.error("Verification failed:", err);
+              alert("Payment verification failed.");
+            }
+          },
+          prefill: {
+            name: "Customer Name",
+            email: "customer@example.com",
+            contact: "9999999999",
+          },
+          theme: {
+            color: "#3399cc",
+          },
+        };
+
+        const rzp = new window.Razorpay(options);
+        rzp.open();
+
+        rzp.on("payment.failed", function (response) {
+          console.error("Payment failed:", response.error);
+          alert("Payment failed. Please try again.");
+        });
+
+      } catch (error) {
+        console.error("Payment init error:", error);
+        alert("Could not start payment process.");
+      }
     }
-  }
-};
+  };
 
   return (
     <>

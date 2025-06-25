@@ -29,6 +29,7 @@ export default function ProductDetails({ product }) {
       <ActionButtons 
   onBuyNow={() => navigate('/checkout')}
   onAddToCart={() => {
+    localStorage.removeItem("orderId");
     const cart = JSON.parse(localStorage.getItem('cart')) || [];
 
     // Check if product already in cart
