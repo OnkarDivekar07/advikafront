@@ -30,22 +30,26 @@ export default function OtpInput({ length = 6, onChange }) {
   };
 
   return (
-    <div className="flex space-x-2 justify-center">
-      {Array.from({ length }).map((_, idx) => (
-        <input
-          key={idx}
-          type="text"
-          maxLength="1"
-          inputMode="numeric"
-          pattern="[0-9]*"
-          ref={el => (inputsRef.current[idx] = el)}
-          onInput={e => handleInput(e, idx)}
-          onKeyDown={e => handleKeyDown(e, idx)}
-          className="otp-input w-12 h-12 border border-gray-300 rounded-md text-center text-xl font-bold focus:outline-none focus:ring-2 focus:ring-[#3DF4A6]"
-          aria-label={`OTP digit ${idx + 1}`}
-          required
-        />
-      ))}
-    </div>
+    <form autoComplete="one-time-code">
+  <div className="flex space-x-2 justify-center">
+    {Array.from({ length }).map((_, idx) => (
+      <input
+        key={idx}
+        type="text"
+        name={`otp-${idx}`} // gives each input a name, optional
+        maxLength="1"
+        inputMode="numeric"
+        pattern="[0-9]*"
+        ref={el => (inputsRef.current[idx] = el)}
+        onInput={e => handleInput(e, idx)}
+        onKeyDown={e => handleKeyDown(e, idx)}
+        className="otp-input w-12 h-12 border border-gray-300 rounded-md text-center text-xl font-bold focus:outline-none focus:ring-2 focus:ring-[#3DF4A6]"
+        aria-label={`OTP digit ${idx + 1}`}
+        autoComplete={idx === 0 ? "one-time-code" : "off"} // only first input
+        required
+      />
+    ))}
+  </div>
+</form>
   );
 }
