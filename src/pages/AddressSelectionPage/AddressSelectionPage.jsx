@@ -52,6 +52,7 @@ export default function AddressSelectionPage() {
       alert('Please select an address.');
       return;
     }
+    localStorage.setItem("selectedAddressId", selectedAddressId);
      navigate('/payment');
   };
 

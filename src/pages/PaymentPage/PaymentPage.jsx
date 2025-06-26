@@ -4,6 +4,8 @@ import OrderSummary from "../../components/OrderSummary/OrderSummary";
 import PaymentMethodForm from "../../components/PaymentMethodForm/PaymentMethodForm";
 import Navbar from "../../components/Navbar/navbar";
 import { useNavigate } from "react-router-dom";
+const selectedAddressId = localStorage.getItem("selectedAddressId");
+
 
 export default function PaymentPage() {
   const [order, setOrder] = useState(null);
@@ -43,7 +45,7 @@ export default function PaymentPage() {
         // Fallback: No stored ID or invalid draft -> Create new
         const createRes = await axios.post(
           `${process.env.REACT_APP_API_URL}/api/order`,
-          {},
+          {selectedAddressId},
           {
             headers: { Authorization: `Bearer ${token}` },
           }
