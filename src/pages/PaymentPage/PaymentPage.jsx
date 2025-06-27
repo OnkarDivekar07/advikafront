@@ -112,6 +112,7 @@ export default function PaymentPage() {
 
               alert("Payment Successful!");
               localStorage.removeItem("orderId");
+              localStorage.removeItem("selectedAddressId")
               navigate("/Sucess");
             } catch (err) {
               console.error("Verification failed:", err);

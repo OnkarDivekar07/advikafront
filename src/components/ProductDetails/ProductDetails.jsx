@@ -27,11 +27,21 @@ export default function ProductDetails({ product }) {
         <QuantitySelector quantity={quantity} setQuantity={setQuantity} />
         <div className="mt-4 text-black font-bold text-xl">Subtotal: ₹ {subtotal}</div>
       <ActionButtons 
-  onBuyNow={() => navigate('/checkout')}
+  onBuyNow={() => {
+    localStorage.removeItem("orderId");
+    const buyNowItem = {
+      id: product.id,
+      name: product.name,
+      price: product.price,
+      quantity: quantity,
+      image: product.images?.[0] || '',
+    };
+    localStorage.setItem("buyNow", JSON.stringify(buyNowItem));
+    localStorage.setItem("orderMode", "buyNow");
+    navigate('/checkout')}}
   onAddToCart={() => {
     localStorage.removeItem("orderId");
     const cart = JSON.parse(localStorage.getItem('cart')) || [];
-
     // Check if product already in cart
     const existingIndex = cart.findIndex(item => item.id === product.id);
     
@@ -50,6 +60,8 @@ export default function ProductDetails({ product }) {
     }
 
     localStorage.setItem('cart', JSON.stringify(cart));
+    localStorage.removeItem("buyNow")
+    localStorage.removeItem("orderMode")
     alert('Added to cart!');
     navigate('/cart')
   }}

@@ -7,16 +7,33 @@ import axios from 'axios';
 
 const syncCartToBackend = async (token) => {
   try {
+    const orderMode = localStorage.getItem("orderMode");
+    let itemsToSync = [];
+    if (orderMode === "buyNow") {
+      const buyNowItem = JSON.parse(localStorage.getItem("buyNow"));
+      if (buyNowItem) {
+        itemsToSync = [{
+          productId: buyNowItem.id,
+          quantity: buyNowItem.quantity,
+        }];
+      }
+    }else{
     const cartItems = JSON.parse(localStorage.getItem("cart")) || [];
      
-    const formattedCart = cartItems.map(item => ({
+     itemsToSync  = cartItems.map(item => ({
       productId: item.id,
       quantity: item.quantity,
     }));
+  }
 
-    console.log('formattedCart',formattedCart)
+if (itemsToSync.length === 0) {
+      console.warn("No items to sync.");
+      return;
+    }
+
+    console.log("Syncing items:", itemsToSync);
       await axios.post(`${process.env.REACT_APP_API_URL}/api/cart`, {
-         cartItems: formattedCart,
+         cartItems: itemsToSync ,
       }, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -25,6 +42,8 @@ const syncCartToBackend = async (token) => {
     
     // Optionally clear local cart after sync
     localStorage.removeItem("cart");
+    localStorage.removeItem("buyNow");
+    localStorage.removeItem("orderMode");
   } catch (error) {
     console.error("Error syncing cart:", error);
     alert("Cart sync failed. You can try again from the cart page.");
