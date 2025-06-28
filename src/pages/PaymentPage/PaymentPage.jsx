@@ -71,10 +71,37 @@ const selectedAddressId = localStorage.getItem("selectedAddressId");
   const handlePayment = async (method) => {
     if (!order) return;
 
-    if (method === "cod") {
-      alert("Order placed successfully with Cash on Delivery.");
+     if (method === "cod") {
+  try {
+    const orderId = localStorage.getItem("orderId");
+
+    if (!orderId) {
+      alert("No order found. Please try again.");
+      return;
+    }
+
+    const response = await axios.post(
+      `${process.env.REACT_APP_API_URL}/api/payment/cod`,
+      {
+        orderId,
+        method: "cod",
+      },
+       {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+    );
+
+    if (response.data.success) {
       localStorage.removeItem("orderId");
-      navigate("/order-success");
+      alert("Order placed successfully!");
+      navigate("/Sucess");
+    } else {
+      alert(response.data.message || "Something went wrong. Try again.");
+    }
+  } catch (err) {
+    console.error("COD Order Error:", err);
+    alert("Error placing COD order. Please try again.");
+  }
     } else {
       try {
         const res = await axios.post(
